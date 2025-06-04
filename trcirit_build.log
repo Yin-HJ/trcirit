@@ -1,0 +1,16 @@
+2025-04-14 17:06:42 [INFO] Starting: input=tests/ident_out/transcript-150_trCIRIT_full-length.fa, output_dir=/data/home/yhj/Projects/circRNA/algorithm/tests/build_out, prefix=prefix
+2025-04-14 17:06:42 [INFO] Command: /usr/bin/java -jar /data/home/yhj/Projects/circRNA/algorithm/pkgs/trCIRIT-ORF-1.0.3.jar -s tests/ident_out/transcript-150_trCIRIT_full-length.fa -o /data/home/yhj/Projects/circRNA/algorithm/tests/build_out -p prefix
+2025-04-14 17:06:45 [INFO] Find ORF output:
+STDOUT: Loading Sequences...
+Job Done!
+Exac Time: 1.923s
+
+STDERR: 
+
+2025-04-14 17:06:45 [INFO] Tranlate ORF to Protein output:
+
+2025-04-14 17:06:45 [INFO] [✓] Translated prefix_backward_trCIRIT_ORF.fa → prefix_backward_trCIRIT_ORF_protein.fa (267 proteins)
+2025-04-14 17:06:45 [INFO] [✓] Translated prefix_forward_trCIRIT_ORF.fa → prefix_forward_trCIRIT_ORF_protein.fa (381 proteins)
+2025-04-14 17:06:45 [INFO] [✓] Translated prefix_backward_trCIRIT_ORF-BSJ.fa → prefix_backward_trCIRIT_ORF-BSJ_protein.fa (65 proteins)
+2025-04-14 17:06:45 [INFO] [✓] Translated prefix_forward_trCIRIT_ORF-BSJ.fa → prefix_forward_trCIRIT_ORF-BSJ_protein.fa (192 proteins)
+2025-04-14 17:06:45 [INFO] Results saved to /data/home/yhj/Projects/circRNA/algorithm/tests/build_out!

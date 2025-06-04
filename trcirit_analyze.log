@@ -1,0 +1,5 @@
+2025-05-28 15:37:39 [INFO] Starting solving: /data/home/yhj/Projects/circRNA/algorithm/tests/analysze_input/linear_free/combined/txt/proteinGroups.txt
+2025-05-28 15:37:52 [WARNING] 1461 peptide IDs in summary.tsv were not found in peptides.txt.
+2025-05-28 15:37:52 [INFO] That's ok. Some IDs may be filter for low-confidence, so cannot be found in peptides.txt.
+2025-05-28 15:37:52 [INFO] Warning: No LFQ quantification results found in proteinGroups.txt!
+2025-05-28 15:37:52 [INFO] Analyze completed. Files saved to: /data/home/yhj/Projects/circRNA/algorithm/analyze_out

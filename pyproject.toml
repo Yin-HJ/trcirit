@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trcirit"
+version = "2.0.0"
+
+dependencies = [
+    "click",
+]
+
+[project.scripts]
+trcirit = "modules.cli:cli"
+
+[tool.setuptools]
+packages = {find = {}}

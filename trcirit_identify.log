@@ -1,0 +1,31 @@
+2025-04-14 17:04:33 [INFO] Starting: input=tests/data/input/transcript-150.fa, output_dir=/data/home/yhj/Projects/circRNA/algorithm/tests/ident_out, window=10, prefix=prefix
+2025-04-14 17:04:33 [INFO] Command: /usr/bin/java -jar /data/home/yhj/Projects/circRNA/algorithm/pkgs/Cirit-1.0.jar -i tests/data/input/transcript-150.fa -o /data/home/yhj/Projects/circRNA/algorithm/tests/ident_out/prefix_circRNAs_cirit.fa -w 10
+2025-04-14 17:04:54 [INFO] Identify output:
+STDOUT: Loading Sequences...
+Loaded [ 245508 ] sequences
+Finding Circular RNAs...
+Found [ 185 ] circular RNAs!
+Writing Results...
+Job Done!
+Exac Time: 20.162s
+
+STDERR: 
+
+2025-04-14 17:04:54 [INFO] Identification completed in 21.94s
+
+2025-04-14 17:04:54 [INFO] Starting: genome_index=chm13, genome_dir=data/genome/build/chm13, genome_seq=data/genome/chm13.fasta, genome_ref=data/genome/chm13.bed, output_dir=/data/home/yhj/Projects/circRNA/algorithm/tests/ident_out, prefix=prefix
+2025-04-14 17:04:54 [INFO] Command: /usr/bin/java -jar /data/home/yhj/Projects/circRNA/algorithm/pkgs/trCIRIT-BSJ-1.0.2.jar -s /data/home/yhj/Projects/circRNA/algorithm/tests/ident_out/prefix_circRNAs_cirit.fa -d chm13 -D data/genome/build/chm13 -g data/genome/chm13.fasta -r data/genome/chm13.bed -p prefix -o /data/home/yhj/Projects/circRNA/algorithm/tests/ident_out
+2025-04-14 17:06:03 [INFO] Re-construct full-length output:
+STDOUT: GMAP Execution Completed!
+Loading Sequences...
+Loaded [ 185 ] sequences
+Annotation done.
+Read gtf completed.
+CircRNA full-length re-construction successfully!
+Full-length circRNAs has been written to /data/home/yhj/Projects/circRNA/algorithm/tests/ident_out/prefix_trCIRIT_full-length.fa!
+Job Done!
+Exac Time: 67.86s
+
+STDERR: 
+
+2025-04-14 17:06:03 [INFO] Results saved to /data/home/yhj/Projects/circRNA/algorithm/tests/ident_out!
