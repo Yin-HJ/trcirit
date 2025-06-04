@@ -150,9 +150,9 @@ experiment design
 # trcirit/data/ms_template/exp_design_tpl.txt
 
 RawFileName	Experiments	Fractions
-file1.raw	  Disease1    
-file2.raw	  Disease2    
-file3.raw	  Control1
+file1.raw   Disease1    
+file2.raw   Disease2    
+file3.raw   Control1
 file4.raw   Control2
 file5.raw   Disease3    1
 file6.raw   Disease3    2
