@@ -19,7 +19,7 @@ The **built-in circRNA reference** and **linear-free search strategy** are tailo
 ## Installation
 
 ```bash
-git clone https://github.com/your_username/trcirit.git
+git clone git@github.com:Yin-HJ/trcirit.git
 cd trcirit
 conda env create -n trcirit -f conda_trcirit_env.yml
 conda activate trcirit
