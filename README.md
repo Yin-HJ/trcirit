@@ -78,7 +78,7 @@ Options:
 ```bash
 # build index by Gmap
 cd trcirit/data/genome
-gmap_build -d chm13 -d chm13 chm13.fasta -D build
+gmap_build -d chm13 chm13.fasta -D build
 ```
 
  #### Identify  full-length circRNAs 
