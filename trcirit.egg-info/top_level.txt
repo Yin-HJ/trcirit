@@ -1,6 +1,0 @@
-build
-data
-modules
-pkgs
-tests
-utils
