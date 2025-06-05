@@ -3,10 +3,9 @@ channels:
   - bioconda
   - anaconda
   - conda-forge
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
@@ -191,5 +190,5 @@ dependencies:
   - pip:
       - click==8.1.8
       - pyyaml==6.0.2
-      - trcirit==0.1.0
+      - trcirit==2.0.0
 prefix: /data/home/yhj/application/miniconda3/envs/trcirit
