@@ -19,7 +19,6 @@ def add_validate_commands(cli):
                 3) Remove matched spectra from raw files;
                 4) Re-search against circRNA-derived peptide reference.
 
-
                 Example: trcirit validate -f config.yaml
                 """,
                 context_settings={'help_option_names': ['-h', '--help']})
