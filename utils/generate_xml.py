@@ -60,7 +60,7 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
                     elem.text = str(caster(value))
 
     # clear existing filePaths / experiments / fractions
-    for tag in ["filePaths", "experiments", "fractions"]:
+    for tag in ["filePaths", "experiments", "fractions", "ptms", "paramGroupIndices", "referenceChannel"]:
         element = root.find(tag)
         for child in list(element):
             element.remove(child)
@@ -87,9 +87,14 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
             raw_name = os.path.splitext(raw_name)[0] + "_filtered.mzML"
 
         full_raw_path = os.path.join(raw_path_prefix, raw_name)
+        ref_channel = "" if "ReferenceChannel" not in row or pd.isna(row["ReferenceChannel"]) else str(row["ReferenceChannel"])
+
         ET.SubElement(root.find("filePaths"), "string").text = full_raw_path
         ET.SubElement(root.find("experiments"), "string").text = str(row["Experiments"])
         ET.SubElement(root.find("fractions"), "short").text = fractions_to_write[i]
+        ET.SubElement(root.find("ptms"), "boolean").text = "False"
+        ET.SubElement(root.find("paramGroupIndices"), "int").text = "0"
+        ET.SubElement(root.find("referenceChannel"), "string").text = ref_channel
 
     # fix > escaping
     xml_str = ET.tostring(root, encoding="utf-8", xml_declaration=True, pretty_print=True).decode("utf-8")

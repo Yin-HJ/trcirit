@@ -1,4 +1,4 @@
-RawFileName	Experiments	Fractions
+RawFileName	Experiments	Fractions ReferenceChannel
 file1.raw	Disease1    
 file2.raw	Disease2    
 file3.raw	Control1
