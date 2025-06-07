@@ -67,8 +67,8 @@ def add_validate_commands(cli):
             if dryrun:
                 click.echo(f"[Dryrun] Would run MaxQuant: dotnet {cfg['mq_cmd']} {mqpar_linear}")
             else:
-                # run_maxquant(cfg["mq_cmd"], mqpar_linear, "linear", logger)
-                click.echo(f"Test: run MaxQuant: dotnet {cfg['mq_cmd']} {mqpar_linear}")
+                run_maxquant(cfg["mq_cmd"], mqpar_linear, "linear", logger)
+                # click.echo(f"Test: run MaxQuant: dotnet {cfg['mq_cmd']} {mqpar_linear}")
 
             # === Step 2 ===
             click.echo("\nStep2: Extracting high-confidence linear mRNA scans...")
