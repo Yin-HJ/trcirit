@@ -110,7 +110,7 @@
    <writeMsmsScansTable>True</writeMsmsScansTable>
    <writePasefMsmsScansTable>True</writePasefMsmsScansTable>
    <writeAccumulatedMsmsScansTable>True</writeAccumulatedMsmsScansTable>
-   <writeMs3ScansTable>True</writeMs3ScansTable>
+   <writeMs3ScansTable>False</writeMs3ScansTable>
    <writeAllPeptidesTable>False</writeAllPeptidesTable>
    <writeMzRangeTable>True</writeMzRangeTable>
    <writeDiaFragmentTable>False</writeDiaFragmentTable>
