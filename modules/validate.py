@@ -212,7 +212,10 @@ def run_maxquant(mq_cmd, mqpar_xml, ref_type, logger):
         for line in process.stdout:
             line = line.rstrip()
             if line:
-                print(f"- {line}")
+                try:
+                    click.echo(f"- {line}") 
+                except OSError:
+                    pass
                 logger.info(line)
 
         return_code = process.wait()
