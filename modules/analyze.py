@@ -34,7 +34,7 @@ def add_analyze_commands(cli):
             protein_group_path = input_path.joinpath("linear_free", "combined", "txt", "proteinGroups.txt")
             check_path(protein_group_path, logger) 
 
-            protein_num = analyze_protein(protein_group_path, out_dir, output_prefix="Protein_", logger=logger)
+            protein_num = analyze_protein(protein_group_path, out_dir, output_prefix="Protein", logger=logger)
             click.secho(f"\nIdentified {protein_num} peptides/proteins!", fg="green")
             click.echo(f"Analyze completed. Files saved to: {out_dir}")
             logger.info(f"Analyze completed. Files saved to: {out_dir}")
@@ -183,10 +183,11 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     with open(os.path.join(out_dir, "README.txt"), "w") as f:
         f.write(
             "# Output Description for analyze module\n"
+            
             "1. *_iBAQ_quantification.tsv: Protein names + iBAQ matrix (quantile normalized across samples, log2-transformed, NA filled).\n"
             "   iBAQ values are suitable for comparing **absolute abundance between different proteins**.\n"
             "2. *_raw.tsv: Protein names + raw iBAQ values (not normalized/log2).\n"
-            "3. *_LFQ.tsv: Protein names + LFQ intensity columns (raw). LFQ values are suitable for comparing **relative abundance across samples for the same protein**.\n"
+            "3. *_LFQ.tsv(if exists): Protein names + LFQ intensity columns (raw). LFQ values are suitable for comparing **relative abundance across samples for the same protein**.\n"
             "4. *_summary.tsv: Protein summary including gene name, unique peptides, iBAQ, peptide IDs, peptide sequences (Peptide seqs), and missing data flag. Column 'Peptide seqs' is mapped from 'Peptide IDs' using peptides.txt."
             "Column 'Filled_Missing' = True if any iBAQ value was originally missing.\n"
             "5. Fill strategy: missing values are filled with the minimum log2(iBAQ+1) value of each sample (column-wise).\n"
