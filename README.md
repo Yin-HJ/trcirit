@@ -137,8 +137,8 @@ Options:
   -f, --config PATH        YAML config file for pipeline  [required]
   -o, --out_dir DIRECTORY  Output directory, default: valid_out
   -d, --dryrun             Dry run mode: only generate mqpar.xml and print commands without
-                           execution.
-  -s, --skip-generate      Skip generating mqpar.xml files (if manually modified after --dryrun.).
+                           execution
+  -s, --skip-generate      Skip generating mqpar.xml files (if manually modified after --dryrun)
   -h, --help               Show this message and exit.
 ```
 
@@ -150,7 +150,7 @@ experiment design
 # trcirit/data/ms_template/exp_design_tpl.txt
 
 RawFileName	Experiments	Fractions
-file1.raw   Disease1    
+file1.raw   Disease1 
 file2.raw   Disease2    
 file3.raw   Control1
 file4.raw   Control2
