@@ -34,7 +34,7 @@ def add_analyze_commands(cli):
             protein_group_path = input_path.joinpath("linear_free", "combined", "txt", "proteinGroups.txt")
             check_path(protein_group_path, logger) 
 
-            protein_num = analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger=logger)
+            protein_num = analyze_protein(protein_group_path, out_dir, output_prefix="circ_protein", logger=logger)
             click.secho(f"\nIdentified {protein_num} peptides/proteins!", fg="green")
             click.echo(f"Analyze completed. Files saved to: {out_dir}")
             logger.info(f"Analyze completed. Files saved to: {out_dir}")
