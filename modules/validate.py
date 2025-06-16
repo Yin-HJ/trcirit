@@ -28,9 +28,9 @@ def add_validate_commands(cli):
                 help="Output directory, default: valid_out",
                 type=click.Path(file_okay=False, dir_okay=True, writable=True, resolve_path=True))
     @click.option("--dryrun", "-d", is_flag=True, default=False,
-              help="Dry run mode: only generate mqpar.xml and print commands without execution.")
+              help="Dry run mode: only generate mqpar.xml and print commands without execution")
     @click.option("--skip-generate", "-s", is_flag=True, default=False,
-              help="Skip generating mqpar.xml files (if manually modified after --dryrun.).")
+              help="Skip generating mqpar.xml files (if manually modified after --dryrun)")
 
     def cmd_validate(config, out_dir, dryrun, skip_generate):
 
