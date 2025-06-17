@@ -84,7 +84,7 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
         raw_name = row["RawFileName"]
 
         if raw_subdir:
-            raw_name = os.path.splitext(raw_name)[0] + "_filtered.mzML"
+            raw_name = os.path.splitext(raw_name)[0] + "_filtered.mzXML"
 
         full_raw_path = os.path.join(raw_path_prefix, raw_name)
         ref_channel = "" if "ReferenceChannel" not in row or pd.isna(row["ReferenceChannel"]) else str(row["ReferenceChannel"])
