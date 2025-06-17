@@ -69,8 +69,10 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     # === Step1: get sepcical cols from raw dataframe===
     # get fixed cols
     fixed_cols = [
-        "Protein names",
-        "Gene names",
+        # "Protein names",
+        # "Gene names",
+        "Protein IDs",
+        "Fasta headers",
         "Unique peptides",
         "Q-value",
         "Score",
@@ -93,6 +95,10 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
 
     # extract sub table
     df_sub = df[cols_to_extract].copy()
+    
+    if df_sub.empty:
+        click.echo("[Warning] Analyze stop! No data found in proteinGroup.txt, check the file.")
+        sys.exit(1)
 
     # === Step 2: filter invalid rows ===
     click.echo("\n- Filtering low-confidence proteins\n")
@@ -108,6 +114,10 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     # filter rows
     mask = is_not_contaminant & is_not_reverse & is_qvalue_pass & is_score_pass & is_unique_pep
     df_filtered = df_sub[mask].copy()
+
+    if df_filtered.empty:
+        click.echo("[Warning] Analyze stop! After filtering, no high-confidence proteins were identified from proteinGroup.txt.")
+        sys.exit(1)
 
     # === Step3: data normalization and transformation ===
     click.echo("===Step1 : iBAQ quantification===")
