@@ -36,7 +36,9 @@ def extract_high_conf_scans_and_convert(msmsScan_path, output_path, pep_thresh=0
             (chunk["Score"] >= score_thresh) &
             (chunk["Reverse"].astype(str).str.strip() != "+")
         )
-        high_conf = chunk[mask]
+
+        # !!Because the filter parameter of msconvert is followed by the spec ID to be reserved, it needs to be reversed here.
+        high_conf = chunk[~mask]
 
         for _, row in high_conf.iterrows():
             raw = str(row["Raw file"]).strip()
