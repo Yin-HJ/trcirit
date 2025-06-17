@@ -59,7 +59,7 @@ def extract_high_conf_scans_and_convert(msmsScan_path, output_path, pep_thresh=0
     pd.DataFrame(result).to_csv(output_path, sep='\t', index=False)
     total = sum(len(scans) for scans in scan_dict.values())
     filtered_count = total_rows - total
-    print(f"- [✓] Identify {filtered_count} high-confidence mRNA scans and the remaining {total} will be used for subsequent analysis.")
+    print(f"- [✓] Identify {filtered_count} high-confidence mRNA scans and the remaining {total} scans will be used for subsequent analysis.")
     print(f"- Result table saved to {output_path}")
     return total
 

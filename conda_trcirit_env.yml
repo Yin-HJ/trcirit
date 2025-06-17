@@ -1,6 +1,5 @@
 name: trcirit
 channels:
-  - bioconda
   - anaconda
   - conda-forge
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
@@ -144,7 +143,6 @@ dependencies:
   - pixman=0.40.0=h7f8727e_1
   - platformdirs=4.3.7=py39h06a4308_0
   - pooch=1.8.2=py39h06a4308_0
-  - proteowizard=3_0_9992=h2d50403_2
   - pulseaudio=16.1=hcb278e6_3
   - pulseaudio-client=16.1=h5195f5e_3
   - pulseaudio-daemon=16.1=ha8d29e2_3
@@ -190,5 +188,5 @@ dependencies:
   - pip:
       - click==8.1.8
       - pyyaml==6.0.2
-      # - trcirit==2.0.0
+      - trcirit==2.0.0
 prefix: /data/home/yhj/application/miniconda3/envs/trcirit
