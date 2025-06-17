@@ -69,8 +69,6 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     # === Step1: get sepcical cols from raw dataframe===
     # get fixed cols
     fixed_cols = [
-        # "Protein names",
-        # "Gene names",
         "Protein IDs",
         "Fasta headers",
         "Unique peptides",
