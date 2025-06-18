@@ -228,7 +228,6 @@ def run_maxquant(mq_cmd, mqpar_xml, ref_type, logger):
 
     except Exception as e:
         logger.exception(f"[✗] Unexpected failure during MaxQuant run for {ref_type}")
-        # click.secho(f"[✗] MaxQuant failed unexpectedly for {ref_type} reference.", fg='red', err=True)
         raise click.Abort()
 
 def format_duration(seconds):
