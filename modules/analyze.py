@@ -1,5 +1,6 @@
 import os
 import click
+import sys
 import time
 import shutil
 import logging
@@ -34,7 +35,7 @@ def add_analyze_commands(cli):
             protein_group_path = input_path.joinpath("linear_free", "combined", "txt", "proteinGroups.txt")
             check_path(protein_group_path, logger) 
 
-            protein_num = analyze_protein(protein_group_path, out_dir, output_prefix="circ_protein", logger=logger)
+            protein_num = analyze_protein(protein_group_path, out_dir, output_prefix="Protein_", logger=logger)
             click.secho(f"\nIdentified {protein_num} peptides/proteins!", fg="green")
             click.echo(f"Analyze completed. Files saved to: {out_dir}")
             logger.info(f"Analyze completed. Files saved to: {out_dir}")
@@ -66,60 +67,30 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     os.makedirs(out_dir, exist_ok=True)
     df = pd.read_csv(protein_group_path, sep='\t', low_memory=False)
 
-    # === Step1: get sepcical cols from raw dataframe===
-    # get fixed cols
-    fixed_cols = [
-        "Protein IDs",
-        "Fasta headers",
-        "Unique peptides",
-        "Q-value",
-        "Score",
-        "Peptide IDs",
-        "Potential contaminant",
-        "Reverse",
-        "Only identified by site"
-    ]
-
-    # get cols realted to iBAQ
-    ibaq_cols = [col for col in df.columns if col.startswith("iBAQ")]
-
-    # merge cols
-    cols_to_extract = fixed_cols + ibaq_cols
-
-    # check the cols exist
-    missing_cols = [col for col in cols_to_extract if col not in df.columns]
-    if missing_cols:
-        raise ValueError(f"[✗] The following required columns are missing: {missing_cols}")
-
-    # extract sub table
-    df_sub = df[cols_to_extract].copy()
-    
-    if df_sub.empty:
-        click.echo("[Warning] Analyze stop! No data found in proteinGroup.txt, check the file.")
-        sys.exit(1)
-
-    # === Step 2: filter invalid rows ===
+    # === Step 1: filter invalid rows ===
     click.echo("\n- Filtering low-confidence proteins\n")
 
     # ========== filter criteria ============
-    is_not_contaminant = df_sub["Potential contaminant"].astype(str).str.strip() != "+"
-    is_not_reverse = df_sub["Reverse"].astype(str).str.strip() != "+"
-    is_not_OIBS = df_sub["Only identified by site"].astype(str).str.strip() != "+"
-    is_qvalue_pass = df_sub["Q-value"] < 0.01
-    is_score_pass = df_sub["Score"] > 70
-    is_unique_pep = df_sub["Unique peptides"] > 1
+
+    is_not_contaminant = df["Potential contaminant"].astype(str).str.strip() != "+"
+    is_not_reverse = df["Reverse"].astype(str).str.strip() != "+"
+    is_not_OIBS = df["Only identified by site"].astype(str).str.strip() != "+"
+    is_qvalue_pass = df["Q-value"] < 0.01
+    is_score_pass = df["Score"] > 70
+    is_unique_pep = df["Unique peptides"] > 1
 
     # filter rows
     mask = is_not_contaminant & is_not_reverse & is_qvalue_pass & is_score_pass & is_unique_pep
-    df_filtered = df_sub[mask].copy()
+    df_filtered = df[mask].copy()
 
     if df_filtered.empty:
         click.echo("[Warning] Analyze stop! After filtering, no high-confidence proteins were identified from proteinGroup.txt.")
         sys.exit(1)
 
-    # === Step3: data normalization and transformation ===
+    # === Step2: iBAQ data normalization and transformation ===
     click.echo("===Step1 : iBAQ quantification===")
     click.echo("- iBAQ Normalization and log-transformation")
+
     ibaq_cols = [col for col in df_filtered.columns if col.startswith("iBAQ ") and col != "iBAQ"]
     df_ibaq = df_filtered[ibaq_cols].copy()
 
@@ -145,23 +116,23 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     min_vals = np.nanmin(df_log2.values, axis=0)
     df_filled = df_log2.fillna(pd.Series(min_vals, index=df_log2.columns))
 
-    # === write output files ===
+    # === Step3: write output files ===
     click.echo("- Prepare iBAQ data and write results")
 
     # 1. IBAQ quantification（normalized, log2, NA filled）
-    df_filled_with_name = df_filtered.loc[df_filled.index, ["Protein names"]].copy()
+    df_filled_with_name = df_filtered.loc[df_filled.index, ["Protein IDs"]].copy()
     df_quant = pd.concat([df_filled_with_name, df_filled], axis=1)
     df_quant.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_processed.tsv"), sep="\t", index=False)
 
-    # 2. iBAQ raw（仅Protein names + 原始iBAQ）
+    # 2. iBAQ raw（仅Protein IDs + 原始iBAQ）
     df_raw_ibaq = pd.concat([
-        df_filtered.loc[df_ibaq.index, ["Protein names"]],
+        df_filtered.loc[df_filled.index, ["Protein IDs"]],
         df_ibaq.loc[df_filled.index]
     ], axis=1)
     df_raw_ibaq.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_raw.tsv"), sep="\t", index=False)
 
     # 3. Summary（Protein + Gene + iBAQ + Peptides IDs + Peptide seqs + Missing Flag）
-    meta_cols = ["Protein names", "Gene names", "Unique peptides", "iBAQ", "Peptide IDs"]
+    meta_cols = ["Protein IDs", "Fasta headers", "Unique peptides", "iBAQ", "Peptide IDs"]
     df_meta = df_filtered.loc[df_filled.index, meta_cols].copy()
     df_meta["Filled_Missing"] = is_filled.astype(bool).values
 
@@ -174,12 +145,10 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     # 4. LFQ quantification results (LFQ intensity alreay normalized)
     click.echo("\n===Step2 : LFQ quantification===")
     click.echo("- Extract LFQ results and write results")
+
     lfq_cols = [col for col in df_filtered.columns if col.startswith("LFQ intensity ")]
     if lfq_cols:
-        df_lfq = pd.concat([
-            df_filtered.loc[df_filtered.index, ["Protein names"]],
-            df_filtered[lfq_cols]
-        ], axis=1)
+        df_lfq = df_filtered[["Protein IDs"] + lfq_cols]
         df_lfq.to_csv(os.path.join(out_dir, f"{output_prefix}_LFQ.tsv"), sep="\t", index=False)
     else:
         click.secho("Warning: No LFQ quantification results found in proteinGroups.txt!", fg="red")
@@ -191,11 +160,10 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     with open(os.path.join(out_dir, "README.txt"), "w") as f:
         f.write(
             "# Output Description for analyze module\n"
-
-            "1. *_iBAQ_quantification.tsv: Protein names + iBAQ matrix (quantile normalized across samples, log2-transformed, NA filled).\n"
+            "1. *_iBAQ_quantification.tsv: Protein IDs + iBAQ matrix (quantile normalized across samples, log2-transformed, NA filled).\n"
             "   iBAQ values are suitable for comparing **absolute abundance between different proteins**.\n"
-            "2. *_raw.tsv: Protein names + raw iBAQ values (not normalized/log2).\n"
-            "3. *_LFQ.tsv(if exists): Protein names + LFQ intensity columns (raw). LFQ values are suitable for comparing **relative abundance across samples for the same protein**.\n"
+            "2. *_raw.tsv: Protein IDs + raw iBAQ values (not normalized/log2).\n"
+            "3. *_LFQ.tsv: Protein IDs + LFQ intensity columns (raw). LFQ values are suitable for comparing **relative abundance across samples for the same protein**.\n"
             "4. *_summary.tsv: Protein summary including gene name, unique peptides, iBAQ, peptide IDs, peptide sequences (Peptide seqs), and missing data flag. Column 'Peptide seqs' is mapped from 'Peptide IDs' using peptides.txt."
             "Column 'Filled_Missing' = True if any iBAQ value was originally missing.\n"
             "5. Fill strategy: missing values are filled with the minimum log2(iBAQ+1) value of each sample (column-wise).\n"
