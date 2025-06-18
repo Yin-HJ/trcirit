@@ -188,5 +188,4 @@ dependencies:
   - pip:
       - click==8.1.8
       - pyyaml==6.0.2
-      - trcirit==2.0.0
 prefix: /data/home/yhj/application/miniconda3/envs/trcirit
