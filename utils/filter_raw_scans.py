@@ -24,6 +24,8 @@ def compress_scan_list(scan_list):
     return " ".join(result)
 
 def extract_and_save_scan_filters(msmsScan_path, output_dir, pep_thresh=0.01, score_thresh=0.7, chunksize=100000):
+    """extract high-confidence scans and write to filter folder"""
+
     from collections import defaultdict
 
     scan_dict = defaultdict(list)
@@ -120,7 +122,7 @@ def load_scan_filter_file(filter_dir):
     return scan_map
 
 def build_msconvert_cmd(pwiz_path, input_path, filter_file_path, output_path):
-    
+    """Build msconvert cmd"""
     if not os.path.exists(filter_file_path):
         raise FileNotFoundError(f"Scan filter file not found: {filter_file_path}")
 
@@ -272,6 +274,7 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
         raise click.Abort()
     
 def batch_filter_scans(raw_dir, filter_file, output_dir, pwiz_path="msconvert", mono_cmd="mono",fileconverter_cmd="FileConverter", trfp_path="ThermoRawFileParser.exe", threads=4, logger=None):
+        """excuate run_filter_one_and_convert batchly"""
     
     if logger is None:
         import logging
