@@ -73,14 +73,14 @@ def add_validate_commands(cli):
             click.echo("\nStep2: Extracting high-confidence linear mRNA scans...")
             logger.info("=== Start Step2 ===")
             msmsScan_path = os.path.join(cfg["rawFilePath"], "combined/txt/msmsScans.txt")
-            scan_filter_txt = os.path.join(out_dir_path, "scan_to_filter.tsv")
+            scan_filter_dir = os.path.join(out_dir_path, "scan_filter")
 
             if dryrun:
-                click.echo(f"[Dryrun] Would extract high-confidence scans from {msmsScan_path} to {scan_filter_txt}")
+                click.echo(f"[Dryrun] Would extract high-confidence scans from {msmsScan_path} to {scan_filter_dir}")
             else:
-                extract_high_conf_scans_and_convert(
+                extract_and_save_scan_filters(
                     msmsScan_path=msmsScan_path,
-                    output_path=scan_filter_txt,
+                    output_dir=scan_filter_dir,
                     pep_thresh=cfg.get("pep_thresh", 0.01),
                     score_thresh=cfg.get("score_thresh", 0.7)
                 )
@@ -92,11 +92,11 @@ def add_validate_commands(cli):
             filtered_raw_dir = os.path.join(out_dir_path, "linear_free")
 
             if dryrun:
-                click.echo(f"[Dryrun] Would filter spectra in {cfg['rawFilePath']} using {scan_filter_txt}, output to {filtered_raw_dir}")
+                click.echo(f"[Dryrun] Would filter spectra in {cfg['rawFilePath']} using files in {scan_filter_dir}, output to {filtered_raw_dir}")
             else:
                 batch_filter_scans(
                     raw_dir=cfg["rawFilePath"],
-                    filter_file=scan_filter_txt,
+                    filter_file=scan_filter_dir,
                     output_dir=filtered_raw_dir,
                     pwiz_path=cfg["pwiz_path"],
                     trfp_path=cfg["trfp"],
@@ -105,7 +105,6 @@ def add_validate_commands(cli):
                     mono_cmd=cfg.get("mono", "mono"),
                     fileconverter_cmd=cfg.get("fileconverter", "FileConverter")
                 )
-
             # === Step 4 ===
             click.echo("\nStep4: Starting MaxQuant analysis for circular mRNA reference (time consuming)... ")
             logger.info("=== Start Step4 ===")
