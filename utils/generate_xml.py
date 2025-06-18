@@ -1,4 +1,5 @@
 import os
+import re
 import click
 import pandas as pd
 import subprocess
@@ -22,64 +23,119 @@ def compress_scan_list(scan_list):
         i += 1
     return " ".join(result)
 
-def extract_high_conf_scans_and_convert(msmsScan_path, output_path, pep_thresh=0.01, score_thresh=0.7, chunksize=100000):
-    """
-    Read msmsScans in blocks, extract high-confidence scans, and finally generate scan tables to be filtered out.
-    """
+def extract_and_save_scan_filters(msmsScan_path, output_dir, pep_thresh=0.01, score_thresh=0.7, chunksize=100000):
+    from collections import defaultdict
+
     scan_dict = defaultdict(list)
     use_cols = ["Raw file", "Scan number", "PEP", "Score", "Reverse"]
     total_rows = 0
-    
-    for chunk in pd.read_csv(msmsScan_path, sep='\t', usecols=use_cols, chunksize=chunksize):
-        
-        total_rows += len(chunk)
 
-        #Filter high-quality rows (those to be filtered out)
+    for chunk in pd.read_csv(msmsScan_path, sep='\t', usecols=use_cols, chunksize=chunksize):
+        total_rows += len(chunk)
         mask = (
             (chunk["PEP"] <= pep_thresh) &
             (chunk["Score"] >= score_thresh) &
             (chunk["Reverse"].astype(str).str.strip() != "+")
         )
-
-        # !!Because the filter parameter of msconvert is followed by the spec ID to be reserved, it needs to be reversed here.
-        # the below high_conf actually means complement of high_conf, and will be used for subsequent analysis
-        high_conf = chunk[~mask]
-
-        for _, row in high_conf.iterrows():
+        scan_to_keep = chunk[~mask]
+        for _, row in scan_to_keep.iterrows():
             raw = str(row["Raw file"]).strip()
             scan = int(row["Scan number"])
             scan_dict[raw].append(scan)
 
-    # formatted
-    result = []
+    os.makedirs(output_dir, exist_ok=True)
+    summary = []
+
     for raw_file, scans in scan_dict.items():
         compressed = compress_scan_list(scans)
-        result.append({"Raw file": raw_file, "Scan ranges": compressed, "Scan count": len(scans)})
+        raw_basename = os.path.splitext(os.path.basename(raw_file))[0]
+        filter_txt_path = os.path.join(output_dir, f"{raw_basename}_scan2filter.txt")
 
-    pd.DataFrame(result).to_csv(output_path, sep='\t', index=False)
-    total = sum(len(scans) for scans in scan_dict.values())
-    filtered_count = total_rows - total
-    print(f"- [✓] Identify {filtered_count} high-confidence mRNA scans and the remaining {total} scans will be used for subsequent analysis.")
-    print(f"- Result table saved to {output_path}")
-    return total
+        with open(filter_txt_path, "w") as f:
+            f.write(f'filter="scanNumber {compressed}"\n')
 
+        summary.append({"Raw file": raw_file, "Scan count": len(scans)})
 
-# filter scans from each raw file
-def load_scan_filter_file(filter_file):
-    df = pd.read_csv(filter_file, sep='\t')
-    return {row["Raw file"]: (row["Scan ranges"], int(row.get("Scan count", -1))) for _, row in df.iterrows()}
+    summary_path = os.path.join(output_dir, "scan_filter_summary.tsv")
+    pd.DataFrame(summary).to_csv(summary_path, sep='\t', index=False)
 
-def build_msconvert_cmd(pwiz_path, input_path, scan_filter, output_path):
-    return [
+    total_scans = sum(item["Scan count"] for item in summary)
+    print(f"- [✓] Total scans retained for downstream: {total_scans}")
+    print(f"- [✓] Total high-confidence scans excluded: {total_rows - total_scans}")
+    print(f"- [✓] Written scan filters to: {output_dir}")
+    print(f"- [✓] Summary saved to: {summary_path}")
+
+    return 
+
+def parse_compressed_scan_string(compressed):
+    """
+    Convert compressed scan string into list of scan numbers.
+    Example: '[1,3] [5,6] 8' → [1, 2, 3, 5, 6, 8]
+    """
+    scans = []
+    tokens = compressed.strip().split()
+    for token in tokens:
+        if token.startswith("[") and token.endswith("]"):
+            start, end = token[1:-1].split(",")
+            scans.extend(range(int(start), int(end) + 1))
+        else:
+            scans.append(int(token))
+    return scans
+
+def load_scan_filter_file(filter_dir):
+    """
+    Load per-sample scan filter files from the specified directory.
+
+    Each file should be named as {sample_name}_scan2filter.txt and contain a single line:
+        filter="scanNumber {compressed}"
+
+    Returns:
+        dict: mapping from sample_name to (filter_file_path, scan_count)
+    """
+    scan_map = {}
+
+    for fname in os.listdir(filter_dir):
+        if fname.endswith("_scan2filter.txt"):
+            sample_name = re.sub(r"_scan2filter\.txt$", "", fname)
+            full_path = os.path.join(filter_dir, fname)
+
+            try:
+                with open(full_path) as f:
+                    line = f.readline().strip()
+
+                # Extract the compressed scan string inside the quotes
+                match = re.search(r'filter\s*=\s*"scanNumber\s+(.+?)"', line)
+                if not match:
+                    raise ValueError(f"Invalid format in {fname}")
+
+                compressed = match.group(1)
+                scan_list = parse_compressed_scan_string(compressed)
+                scan_count = len(scan_list)
+
+                scan_map[sample_name] = (full_path, scan_count)
+
+            except Exception as e:
+                print(f"[WARN] Failed to parse {fname}: {e}")
+                scan_map[sample_name] = (full_path, -1)
+    return scan_map
+
+def build_msconvert_cmd(pwiz_path, input_path, filter_file_path, output_path):
+    
+    if not os.path.exists(filter_file_path):
+        raise FileNotFoundError(f"Scan filter file not found: {filter_file_path}")
+
+    cmd = [
         pwiz_path,
         input_path,
         "--mzML",
-        f'--filter', f'scanNumber {scan_filter}',
+        "-c", filter_file_path,
         "--outdir", os.path.dirname(output_path),
         "--outfile", os.path.basename(output_path),
     ]
 
-def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_filter, scan_count=0, fileconverter_cmd="FileConverter", trfp_path="ThermoRawFileParser.exe",mono_cmd="mono", logger=None):
+    return cmd
+
+def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_filter_dir, scan_count=0, fileconverter_cmd="FileConverter", trfp_path="ThermoRawFileParser.exe",mono_cmd="mono", logger=None):
     
     """
     For each sample:
@@ -91,14 +147,16 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
         import logging
         logger = logging.getLogger("validate")
 
-    # Step 1: raw to mzML
+   
     raw_basename = os.path.splitext(raw_file)[0]  # 去掉 .mzML 后缀
-    raw_file_input = os.path.join(raw_dir, raw_basename + ".raw")
+
+    # Step 1: raw to mzML
+    raw_file_raw = os.path.join(raw_dir, raw_basename + ".raw")
     mzml_from_raw = os.path.join(raw_dir, raw_file)
 
     cmd_trfp = [
     mono_cmd, trfp_path,
-    "-i", raw_file_input,
+    "-i", raw_file_raw,
     "-b", mzml_from_raw,
     "-f", "2"
     ]
@@ -126,7 +184,7 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
             print(f"- [✓] Raw file conversion done: {raw_basename}.raw → .mzML")
         
         else:
-            msg = f"[✗] ThermoRawFileParser failed with code {return_code}: {raw_file_input}"
+            msg = f"[✗] ThermoRawFileParser failed with code {return_code}: {raw_file_raw}"
             logger.error(msg)
             print(msg)
             raise RuntimeError(f"ThermoRawFileParser failed for {raw_basename}")
@@ -137,13 +195,14 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
         raise click.Abort()
     
     # Step 2: filter by msconverts
-    input_path = os.path.join(raw_dir, raw_file)
-    output_file = os.path.splitext(raw_file)[0] + "_filtered.mzML"
+    input_path = mzml_from_raw
+    output_file = raw_basename + "_filtered.mzML"
     output_path = os.path.join(output_dir, output_file)
+    filter_file_path = os.path.join(scan_filter_dir, f"{raw_basename}_scan2filter.txt")
 
-    cmd = build_msconvert_cmd(pwiz_path, input_path, scan_filter, output_path)
+    cmd = build_msconvert_cmd(pwiz_path, input_path, filter_file_path, output_path)
     logger.info(f"msconvert start processing file: {raw_file}")
-    # logger.info(f"[CMD] msconvert: {' '.join(cmd)}")
+    logger.info(f"[CMD] msconvert: {' '.join(cmd)}")
 
     try:
         env = os.environ.copy()
@@ -152,19 +211,19 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
         process = subprocess.Popen(
             cmd,
             env=env,
-            stdout=subprocess.PIPE,
+            # stdout=subprocess.PIPE, # too long msg occurs OSError
+            stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1
         )
 
         # Read output stream in real time
-        for line in process.stdout:
-            line = line.rstrip()
-            if line:
-                # print(line)
-                # logger.info(line) # OSError 7 caused by too long msg
-                pass
+        # for line in process.stdout:
+        #     line = line.rstrip()
+        #     if line:
+        #         logger.info(line) # OSError 7 caused by too long msg
+        #         pass
 
         return_code = process.wait()
 
@@ -233,7 +292,7 @@ def batch_filter_scans(raw_dir, filter_file, output_dir, pwiz_path="msconvert", 
 
     with ThreadPoolExecutor(max_workers=threads) as executor:
         futures = []
-        for raw_file_base, (scan_filter, scan_count) in scan_map.items():
+        for raw_file_base, (filter_txt_path, scan_count) in scan_map.items():
             raw_file = raw_file_base + ".mzML"
             
             futures.append(
@@ -243,7 +302,7 @@ def batch_filter_scans(raw_dir, filter_file, output_dir, pwiz_path="msconvert", 
                     raw_dir=raw_dir,
                     output_dir=output_dir,
                     raw_file=raw_file,
-                    scan_filter=scan_filter,
+                    scan_filter_dir=os.path.dirname(filter_txt_path),
                     mono_cmd=mono_cmd,
                     fileconverter_cmd=fileconverter_cmd,
                     trfp_path=trfp_path,
