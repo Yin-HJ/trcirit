@@ -26,6 +26,8 @@ conda activate trcirit
 pip install -e .
 ```
 
+- Check the **Releases** for the dependency files. 
+
 ## Usage
 
 ```bash
@@ -75,10 +77,12 @@ Options:
 
  #### Preparation for using identify module
 
+This is a very time-consuming step.
+
 ```bash
 # build index by Gmap
 cd trcirit/data/genome
-gmap_build -d chm13 chm13.fasta -D build
+gmap_build -d chm13 chm13.fasta -D build 
 ```
 
  #### Identify  full-length circRNAs 
@@ -150,9 +154,9 @@ experiment design
 # trcirit/data/ms_template/exp_design_tpl.txt
 
 RawFileName	Experiments	Fractions
-file1.raw   Disease1 
-file2.raw   Disease2    
-file3.raw   Control1
+file1.raw	Disease1    
+file2.raw	Disease2    
+file3.raw	Control1
 file4.raw   Control2
 file5.raw   Disease3    1
 file6.raw   Disease3    2
@@ -223,6 +227,7 @@ trcirit validate -f config.yaml
 ```
 
 - Template file could be found at trcirit/data/ms_template/
+- This is a very time-consuming step.
 
 #### (Optional) personalize editing profiles using the --dryrun and --skip-generate 
 
