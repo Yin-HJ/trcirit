@@ -190,7 +190,6 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
             raise RuntimeError(f"ThermoRawFileParser failed for {raw_basename}")
 
     except Exception  as e:
-        # print(f"[✗] Failed to start ThermoRawFileParser for {raw_file_input}")
         logger.exception(f"[✗] Failed to launch ThermoRawFileParser: {e}")
         raise click.Abort()
     
@@ -218,13 +217,6 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
             bufsize=1
         )
 
-        # Read output stream in real time
-        # for line in process.stdout:
-        #     line = line.rstrip()
-        #     if line:
-        #         logger.info(line) # OSError 7 caused by too long msg
-        #         pass
-
         return_code = process.wait()
 
         if return_code == 0:
@@ -236,7 +228,6 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
             raise RuntimeError(f"msconvert failed for {raw_file}")
             
     except Exception  as e:
-        # print(f"[✗] Failed to start msconvert for {raw_file}")
         logger.exception(f"[✗] Msconvert failed: {e}")
         raise click.Abort()
 
@@ -277,7 +268,6 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
             raise RuntimeError(f"FileConverter failed for {mzxml_name}")
 
     except Exception  as e:
-        # print(f"[✗] Failed to start FileConverter for {mzxml_name}")
         logger.exception(f"[✗] Failed to launch FileConverter: {e}")
         raise click.Abort()
     
