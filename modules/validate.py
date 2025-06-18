@@ -7,7 +7,7 @@ from pathlib import Path
 from utils import init_logger
 from utils.generate_xml import generate_mqpar
 from utils.filter_raw_scans import (
-    extract_high_conf_scans_and_convert,
+    extract_and_save_scan_filters,
     batch_filter_scans
 )
 
