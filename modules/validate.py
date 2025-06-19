@@ -19,6 +19,7 @@ def add_validate_commands(cli):
                 3) Remove matched spectra from raw files;
                 4) Re-search against circRNA-derived peptide reference.
 
+
                 Example: trcirit validate -f config.yaml
                 """,
                 context_settings={'help_option_names': ['-h', '--help']})
@@ -66,8 +67,8 @@ def add_validate_commands(cli):
             if dryrun:
                 click.echo(f"[Dryrun] Would run MaxQuant: dotnet {cfg['mq_cmd']} {mqpar_linear}")
             else:
-                run_maxquant(cfg["mq_cmd"], mqpar_linear, "linear", logger)
-                # click.echo(f"Test: run MaxQuant: dotnet {cfg['mq_cmd']} {mqpar_linear}")
+                run_maxquant(cfg["mq_cmd"], mqpar_linear, "linear", logger) 
+                # click.echo(f"Test: run MaxQuant: dotnet {cfg['mq_cmd']} {mqpar_linear}") 
 
             # === Step 2 ===
             click.echo("\nStep2: Extracting high-confidence linear mRNA scans...")
@@ -105,6 +106,7 @@ def add_validate_commands(cli):
                     mono_cmd=cfg.get("mono", "mono"),
                     fileconverter_cmd=cfg.get("fileconverter", "FileConverter")
                 )
+
             # === Step 4 ===
             click.echo("\nStep4: Starting MaxQuant analysis for circular mRNA reference (time consuming)... ")
             logger.info("=== Start Step4 ===")
@@ -218,6 +220,7 @@ def run_maxquant(mq_cmd, mqpar_xml, ref_type, logger):
                 logger.info(line)
 
         return_code = process.wait()
+
         if return_code == 0:
             click.echo(f"- [✓] MaxQuant finished successfully for {ref_type} reference.")
         else:

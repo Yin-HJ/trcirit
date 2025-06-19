@@ -70,7 +70,7 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     # === Step 1: filter invalid rows ===
     click.echo("\n- Filtering low-confidence proteins\n")
 
-    # ========== filter criteria ============
+    # == filter criteria ==
 
     is_not_contaminant = df["Potential contaminant"].astype(str).str.strip() != "+"
     is_not_reverse = df["Reverse"].astype(str).str.strip() != "+"
@@ -124,7 +124,7 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     df_quant = pd.concat([df_filled_with_name, df_filled], axis=1)
     df_quant.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_processed.tsv"), sep="\t", index=False)
 
-    # 2. iBAQ raw（仅Protein IDs + 原始iBAQ）
+    # 2. iBAQ raw（only Protein IDs + raw iBAQ）
     df_raw_ibaq = pd.concat([
         df_filtered.loc[df_filled.index, ["Protein IDs"]],
         df_ibaq.loc[df_filled.index]
