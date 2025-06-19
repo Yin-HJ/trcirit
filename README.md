@@ -81,7 +81,7 @@ This is a very time-consuming step.
 
 ```bash
 # build index by Gmap
-cd trcirit/data/genome
+mkdir -p trcirit/data/genome
 gmap_build -d chm13 chm13.fasta -D build 
 ```
 
