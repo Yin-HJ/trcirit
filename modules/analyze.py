@@ -63,6 +63,7 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     """
     Analyze proteinGroup.txt, including protein filtering, normalization and log-transformation.
     """
+    
     # === Step 0: ensure output directory exists ===
     os.makedirs(out_dir, exist_ok=True)
     df = pd.read_csv(protein_group_path, sep='\t', low_memory=False)
