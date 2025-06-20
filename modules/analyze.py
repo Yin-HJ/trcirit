@@ -71,7 +71,6 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     click.echo("\n- Filtering low-confidence proteins\n")
 
     # == filter criteria ==
-
     is_not_contaminant = df["Potential contaminant"].astype(str).str.strip() != "+"
     is_not_reverse = df["Reverse"].astype(str).str.strip() != "+"
     is_not_OIBS = df["Only identified by site"].astype(str).str.strip() != "+"

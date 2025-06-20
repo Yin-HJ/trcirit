@@ -274,7 +274,7 @@ def run_filter_one_and_convert(pwiz_path, raw_dir, output_dir, raw_file, scan_fi
         raise click.Abort()
     
 def batch_filter_scans(raw_dir, filter_file, output_dir, pwiz_path="msconvert", mono_cmd="mono",fileconverter_cmd="FileConverter", trfp_path="ThermoRawFileParser.exe", threads=4, logger=None):
-        """excuate run_filter_one_and_convert batchly"""
+    """excuate run_filter_one_and_convert batchly"""
     
     if logger is None:
         import logging
