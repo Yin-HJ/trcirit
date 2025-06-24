@@ -24,7 +24,7 @@ def add_build_commands(cli):
                 help="Prefix for output files, defaut: prefix of input file")
     @click.option("--out_dir","-o", default="build_out",
                 help="Output directory, default: build_out",
-                type=click.Path(file_okay=False, dir_okay=True, writable=True, resolve_path=True))
+                type=click.Path(file_okay=False, dir_okay=True, writable=True))
     @click.option("--java-path", type=click.Path(exists=True, executable=True, path_type=Path),
             help="Custom path to Java executable. default: auto-detect from PATH")
 
@@ -43,7 +43,7 @@ def add_build_commands(cli):
             if prefix is None:
                 prefix = Path(input).stem.split("_")[0] # "sample_name" > "sample" as prefix
 
-            Path(out_dir).mkdir(parents=True, exist_ok=True)
+            Path(out_dir).resolve().mkdir(parents=True, exist_ok=True)
 
             click.echo(f"================Starting build module=================")
             click.secho(f"{input} is processing...")
@@ -105,7 +105,7 @@ def run_build(input, out_dir, prefix, java_path, logger):
             "-jar",
             jar_path,
             "-s", str(input),
-            "-o", str(Path(out_dir)),
+            "-o", str(out_dir),
             "-p", str(prefix)
             
         ]
@@ -133,7 +133,7 @@ def run_build(input, out_dir, prefix, java_path, logger):
         raise RuntimeError(f"Analysis failed: {str(e)}") from e
 
 def run_translate(fa_dir, logger):
-    """Batch translates all.fa or. fast files in the specified directory into protein sequences.
+    """Batch translates all.fa or .fasta files in the specified directory into protein sequences.
 
     Args:
         fa_dir (str): input file path.
@@ -143,11 +143,11 @@ def run_translate(fa_dir, logger):
     fa_dir = Path(fa_dir)
     assert fa_dir.is_dir(), f"Directory not exist: {fa_dir}"
 
-    # Files whose names contain ".fa" and ". fast" and do not contain "protein"
+    # Files whose names contain ".fa" and ". fasta" and do not contain "protein"
     fasta_files = [
-        f for f in fa_dir.glob("*.fa") if "protein" not in f.stem
+        f for f in fa_dir.glob("*.fa") if "protein" not in f.stem and "trCIRIT" in f.stem
     ] + [
-        f for f in fa_dir.glob("*.fasta") if "protein" not in f.stem
+        f for f in fa_dir.glob("*.fasta") if "protein" not in f.stem and "trCIRIT" in f.stem
     ]
 
 

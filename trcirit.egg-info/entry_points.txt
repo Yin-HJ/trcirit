@@ -1,0 +1,2 @@
+[console_scripts]
+trcirit = modules.cli:cli
