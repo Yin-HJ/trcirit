@@ -1,5 +1,7 @@
 data/genome/
 data/circ_seq/
+data/reference/human/
+data/reference/mouse/
 tests/
 pkgs/MaxQuant_v2.6.7.0
 pkgs/trfp

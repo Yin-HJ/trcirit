@@ -21,8 +21,11 @@ def add_analyze_commands(cli):
     @click.option("--out_dir","-o", default="anlyz_out",
                 help="Output directory, default: anlyz_out",
                 type=click.Path(file_okay=False, dir_okay=True, writable=True, resolve_path=True))
+    @click.option("--circ_ref", "-f", required=False,
+              type=click.Path(exists=True),
+              help="Optional circRNA reference fasta file to extract ORF")
 
-    def cmd_analyze(input, out_dir):
+    def cmd_analyze(input, out_dir, circ_ref):
 
         # Initialize logger at module import
         logger = init_logger("analyze")
@@ -35,7 +38,12 @@ def add_analyze_commands(cli):
             protein_group_path = input_path.joinpath("linear_free", "combined", "txt", "proteinGroups.txt")
             check_path(protein_group_path, logger) 
 
-            protein_num = analyze_protein(protein_group_path, out_dir, output_prefix="Protein_", logger=logger)
+            protein_num, summary_path = analyze_protein(protein_group_path, out_dir, output_prefix="Protein", logger=logger)
+            
+            if circ_ref:
+                fasta_path = Path(circ_ref).expanduser().resolve()
+                add_circ_seq_to_summary(summary_path, fasta_path, logger=logger)
+
             click.secho(f"\nIdentified {protein_num} peptides/proteins!", fg="green")
             click.echo(f"Analyze completed. Files saved to: {out_dir}")
             logger.info(f"Analyze completed. Files saved to: {out_dir}")
@@ -76,11 +84,12 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     is_not_reverse = df["Reverse"].astype(str).str.strip() != "+"
     is_not_OIBS = df["Only identified by site"].astype(str).str.strip() != "+"
     is_qvalue_pass = df["Q-value"] < 0.01
-    is_score_pass = df["Score"] > 70
-    is_unique_pep = df["Unique peptides"] > 1
+    # is_score_pass = df["Score"] > 70
+    is_unique_pep = df["Unique peptides"] >= 1
 
     # filter rows
-    mask = is_not_contaminant & is_not_reverse & is_qvalue_pass & is_score_pass & is_unique_pep
+    # mask = is_not_contaminant & is_not_reverse & is_qvalue_pass & is_score_pass & is_unique_pep
+    mask = is_not_contaminant & is_not_reverse & is_qvalue_pass & is_unique_pep
     df_filtered = df[mask].copy()
 
     if df_filtered.empty:
@@ -132,7 +141,7 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     df_raw_ibaq.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_raw.tsv"), sep="\t", index=False)
 
     # 3. Summary（Protein + Gene + iBAQ + Peptides IDs + Peptide seqs + Missing Flag）
-    meta_cols = ["Protein IDs", "Fasta headers", "Unique peptides", "iBAQ", "Peptide IDs"]
+    meta_cols = ["Protein IDs", "Fasta headers", "Unique peptides","Score", "iBAQ", "Peptide IDs"]
     df_meta = df_filtered.loc[df_filled.index, meta_cols].copy()
     df_meta["Filled_Missing"] = is_filled.astype(bool).values
 
@@ -172,11 +181,10 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
                 "   - Reverse != '+' \n"
                 "   - Only identified by site != '+'\n"
                 "   - Q-value < 0.01\n"
-                "   - Score > 70\n"
-                "   - unique peptide > 1\n"
+                "   - unique peptide >= 1\n"
         )
 
-    return  df_meta.shape[0]
+    return  df_meta.shape[0], summary_path
 
 def update_summary_with_peptide_seqs(summary_path, peptides_path, logger=None):
     """
@@ -252,3 +260,68 @@ def update_summary_with_peptide_seqs(summary_path, peptides_path, logger=None):
             logger.info(f"That's ok. Some IDs may be filter for low-confidence, so cannot be found in peptides.txt.")
         else:
             print(f"[Warning] {msg}")
+
+def add_circ_seq_to_summary(summary_path, circ_ref_path, logger=None):
+    """
+    Add circRNA sequences to summary.tsv by mapping 'Fasta headers' to the given reference fasta file.
+    Supports multiple headers per row separated by ';'
+    """
+    # Step 1: read summary.tsv
+    try:
+        df_summary = pd.read_csv(summary_path, sep='\t')
+    except Exception as e:
+        raise IOError(f"Failed to load summary file: {summary_path}\nError: {e}")
+
+    if "Fasta headers" not in df_summary.columns:
+        raise KeyError("Column 'Fasta headers' not found in summary.tsv")
+
+    # Step 2: read fasta files and build map dict
+    seq_dict = {}
+    try:
+        with open(circ_ref_path, 'r') as f:
+            header_ids = []
+            seq_lines = []
+            for line in f:
+                line = line.strip()
+                if line.startswith(">"):
+                    
+                    if header_ids and seq_lines:
+                        seq = "".join(seq_lines)
+                        for h in header_ids:
+                            seq_dict[h] = seq
+
+                    raw_header = line[1:].strip()
+                    header_ids = [h.strip() for h in raw_header.split(";") if h.strip()]
+                    seq_lines = []
+
+                else:
+                    seq_lines.append(line)
+
+            if header_ids and seq_lines:
+                seq = "".join(seq_lines)
+                for h in header_ids:
+                    seq_dict[h] = seq
+
+    except Exception as e:
+        raise IOError(f"Failed to read fasta file: {circ_ref_path}\nError: {e}")
+
+    # Step 3: define map function and solve multiple headers
+    def map_headers_to_seqs(header_string):
+        if pd.isna(header_string):
+            return ""
+        headers = [h.strip() for h in header_string.split(";") if h.strip()]
+        seqs = [seq_dict.get(h, "") for h in headers]
+        return ";".join(seqs)
+
+    # Step 4: apply map, add new columns
+    df_summary["ORF"] = df_summary["Fasta headers"].apply(map_headers_to_seqs)
+
+    # Step 5: write file
+    try:
+        df_summary.to_csv(summary_path, sep='\t', index=False)
+    except Exception as e:
+        raise IOError(f"Failed to write updated summary file with circRNA_seq: {summary_path}\nError: {e}")
+
+    if logger:
+        logger.info(f"circRNA sequences appended to summary file: {summary_path}")
+
