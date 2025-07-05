@@ -218,10 +218,12 @@ def update_summary_with_peptide_seqs(summary_path, peptides_path, logger=None):
 
     # Step 3: Define mapping function
     missing_ids = set()
+
     def map_ids_to_seqs(id_string):
         if pd.isna(id_string):
             return ""
         try:
+            id_string = str(id_string)
             ids = [int(x) for x in id_string.split(";") if x.strip().isdigit()]
             seqs = []
             for i in ids:
@@ -231,10 +233,12 @@ def update_summary_with_peptide_seqs(summary_path, peptides_path, logger=None):
                 else:
                     missing_ids.add(i)
             return ";".join(seqs)
-        except Exception:
+        except Exception as e:
+            print(f"[DEBUG] Failed to parse: {id_string} — Error: {e}")
             return ""
-
     # Step 4: Apply conversion
+    print("[DEBUG] Example Peptide IDs:")
+    print(df_summary["Peptide IDs"].dropna().astype(str).unique()[:5])  
     df_summary["Peptide seqs"] = df_summary["Peptide IDs"].apply(map_ids_to_seqs)
 
     # Step 5: Drop Peptide IDs column, keep column order
