@@ -30,10 +30,11 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
     root.find("numThreads").text = str(cfg.get("threads", 4))
     root.find(".//fastaFilePath").text = cfg.get(fasta_key, "")
 
-    # Optional search parameters from config
+    # Optional(Recommended) search parameters from config
     optional_tags = {
         "enzymes": list,
         "fixedModifications": list,
+        "variableModifications": list,
         "maxMissedCleavages": int,
         "firstSearchTol": float,
         "mainSearchTol": float,
@@ -41,23 +42,30 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
         "minRatioCount": int
     }
 
+    list_tags = ["fixedModifications", "enzymes", "variableModifications"]
     for tag, caster in optional_tags.items():
+       
         value = cfg.get(tag)
-        if value is not None:
-            elem = root.find(f".//{tag}")
-            if elem is not None:
-                if tag in ["fixedModifications", "enzymes"]:
-                    # Clear existing and write new
-                    for child in list(elem):
-                        elem.remove(child)
-                    if isinstance(value, str):
-                        value = [v.strip() for v in value.split(",")]
-                    elif not isinstance(value, list):
-                        raise ValueError(f"{tag} should be a list or comma-separated string.")
-                    for v in value:
-                        ET.SubElement(elem, "string").text = v
-                else:
-                    elem.text = str(caster(value))
+        if not value :
+            continue
+
+        elem = root.find(f".//{tag}")
+        if elem is None:
+            print(f"[WARN] Tag <{tag}> not found in template. Skipped.")
+            continue
+
+        if tag in list_tags:
+            # Clear existing and write new
+            for child in list(elem):
+                elem.remove(child)
+            if isinstance(value, str):
+                value = [v.strip() for v in value.split(",")]
+            elif not isinstance(value, list):
+                raise ValueError(f"{tag} should be a list or comma-separated string.")
+            for v in value:
+                ET.SubElement(elem, "string").text = v
+        else:
+            elem.text = str(caster(value))
 
     # clear existing filePaths / experiments / fractions
     for tag in ["filePaths", "experiments", "fractions", "ptms", "paramGroupIndices", "referenceChannel"]:

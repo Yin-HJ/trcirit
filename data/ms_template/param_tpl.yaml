@@ -40,12 +40,13 @@ Defaults:
 
 # === MaxQuant search settings ===
 Recommended:
-  enzyme: 
+  enzymes: 
     - Trypsin/P
-    - AspC
   fixedModifications: 
     - Carbamidomethyl (C)
-    - Acetyl (N-term)
+  variableModifications:
+    - Oxidation (M)
+    - Acetyl (Protein N-term)
   maxMissedCleavages: 2
   firstSearchTol: 20
   mainSearchTol: 5

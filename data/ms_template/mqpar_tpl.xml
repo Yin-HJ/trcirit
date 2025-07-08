@@ -106,12 +106,12 @@
    <massDifferenceMods>
    </massDifferenceMods>
    <mainSearchMaxCombinations>200</mainSearchMaxCombinations>
-   <writeMsScansTable>False</writeMsScansTable>
+   <writeMsScansTable>True</writeMsScansTable>
    <writeMsmsScansTable>True</writeMsmsScansTable>
    <writePasefMsmsScansTable>True</writePasefMsmsScansTable>
    <writeAccumulatedMsmsScansTable>True</writeAccumulatedMsmsScansTable>
    <writeMs3ScansTable>False</writeMs3ScansTable>
-   <writeAllPeptidesTable>False</writeAllPeptidesTable>
+   <writeAllPeptidesTable>True</writeAllPeptidesTable>
    <writeMzRangeTable>True</writeMzRangeTable>
    <writeDiaFragmentTable>False</writeDiaFragmentTable>
    <writeDiaFragmentQuantTable>False</writeDiaFragmentQuantTable>
@@ -207,7 +207,7 @@
             <string></string>
          </labelMods>
          <lcmsRunType>Standard</lcmsRunType>
-         <reQuantify>False</reQuantify>
+         <reQuantify>True</reQuantify>
          <lfqMode>0</lfqMode>
          <lfqNormClusterSize>80</lfqNormClusterSize>
          <lfqMinEdgesPerNode>3</lfqMinEdgesPerNode>
@@ -467,7 +467,7 @@
          <IncludeWaterCross>False</IncludeWaterCross>
          <IncludeAmmoniaCross>False</IncludeAmmoniaCross>
          <DependentLosses>True</DependentLosses>
-         <Recalibration>False</Recalibration>
+         <Recalibration>True</Recalibration>
       </msmsParams>
       <msmsParams>
          <Name>ITMS</Name>
@@ -486,7 +486,7 @@
          <IncludeWaterCross>False</IncludeWaterCross>
          <IncludeAmmoniaCross>False</IncludeAmmoniaCross>
          <DependentLosses>True</DependentLosses>
-         <Recalibration>False</Recalibration>
+         <Recalibration>True</Recalibration>
       </msmsParams>
       <msmsParams>
          <Name>TOF</Name>
@@ -505,7 +505,7 @@
          <IncludeWaterCross>False</IncludeWaterCross>
          <IncludeAmmoniaCross>False</IncludeAmmoniaCross>
          <DependentLosses>True</DependentLosses>
-         <Recalibration>False</Recalibration>
+         <Recalibration>True</Recalibration>
       </msmsParams>
       <msmsParams>
          <Name>ASTRAL</Name>
@@ -524,7 +524,7 @@
          <IncludeWaterCross>False</IncludeWaterCross>
          <IncludeAmmoniaCross>False</IncludeAmmoniaCross>
          <DependentLosses>True</DependentLosses>
-         <Recalibration>False</Recalibration>
+         <Recalibration>True</Recalibration>
       </msmsParams>
       <msmsParams>
          <Name>UNKNOWN</Name>
@@ -543,7 +543,7 @@
          <IncludeWaterCross>False</IncludeWaterCross>
          <IncludeAmmoniaCross>False</IncludeAmmoniaCross>
          <DependentLosses>True</DependentLosses>
-         <Recalibration>False</Recalibration>
+         <Recalibration>True</Recalibration>
       </msmsParams>
    </msmsParamsArray>
    <fragmentationParamsArray>

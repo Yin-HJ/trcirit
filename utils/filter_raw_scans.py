@@ -28,9 +28,10 @@ def extract_and_save_scan_filters(msmsScan_path, output_dir, pep_thresh=0.01, sc
 
     from collections import defaultdict
 
-    scan_dict = defaultdict(list)
-    use_cols = ["Raw file", "Scan number", "PEP", "Score", "Reverse"]
+    # 1. get high-confidence scans from msmsScans
+    hc_scans = defaultdict(set)
     total_rows = 0
+    use_cols = ["Raw file", "Scan number", "PEP", "Score", "Reverse"]
 
     for chunk in pd.read_csv(msmsScan_path, sep='\t', usecols=use_cols, chunksize=chunksize):
         total_rows += len(chunk)
@@ -39,11 +40,33 @@ def extract_and_save_scan_filters(msmsScan_path, output_dir, pep_thresh=0.01, sc
             (chunk["Score"] >= score_thresh) &
             (chunk["Reverse"].astype(str).str.strip() != "+")
         )
-        scan_to_keep = chunk[~mask]
-        for _, row in scan_to_keep.iterrows():
+        for _, row in chunk[mask].iterrows():
             raw = str(row["Raw file"]).strip()
             scan = int(row["Scan number"])
-            scan_dict[raw].append(scan)
+            hc_scans[raw].add(scan)
+    
+    # 2. extract all scan numbers from msScans
+    summarytxt_path = os.path.join(os.path.dirname(msmsScan_path), "summary.txt")
+
+    df_summary = pd.read_csv(summarytxt_path, sep="\t", usecols=["Raw file", "MS", "MS/MS"])
+    df_summary = df_summary[~df_summary["Raw file"].astype(str).str.strip().str.lower().eq("total")] # the last row is 'Total'
+    all_scans = {}
+
+    for _, row in df_summary.iterrows():
+        raw = str(row["Raw file"]).strip()
+        ms_count = int(row["MS"])
+        msms_count = int(row["MS/MS"])
+        total_scans = ms_count + msms_count
+
+        # 总 scan number 为 1 ~ N（含）
+        all_scans[raw] = set(range(1, total_scans + 1))
+
+    # 3. compute scans to keep = all - high-conf
+    scan_dict = {}
+    for raw_file, all_set in all_scans.items():
+        hc_set = hc_scans.get(raw_file, set())
+        remain_set = sorted(all_set - hc_set)
+        scan_dict[raw_file] = remain_set
 
     os.makedirs(output_dir, exist_ok=True)
     summary = []
@@ -54,16 +77,19 @@ def extract_and_save_scan_filters(msmsScan_path, output_dir, pep_thresh=0.01, sc
         filter_txt_path = os.path.join(output_dir, f"{raw_basename}_scan2filter.txt")
 
         with open(filter_txt_path, "w") as f:
-            f.write(f'filter="scanNumber {compressed}"\n')
+            f.write(f'filter="scanNumber {compressed}" \n') # select scan numbers 
 
         summary.append({"Raw file": raw_file, "Scan count": len(scans)})
 
     summary_path = os.path.join(output_dir, "scan_filter_summary.tsv")
     pd.DataFrame(summary).to_csv(summary_path, sep='\t', index=False)
 
-    total_scans = sum(item["Scan count"] for item in summary)
-    print(f"- [✓] Total scans retained for downstream: {total_scans}")
-    print(f"- [✓] Total high-confidence scans excluded: {total_rows - total_scans}")
+    total_hc_scans = sum(len(scans) for scans in hc_scans.values())
+    total_scans_all = sum(len(scans) for scans in all_scans.values())
+    total_scans_remain = sum(len(scans) for scans in scan_dict.values())
+    print(f"- [√] Total scans: {total_scans_all}")
+    print(f"- [✓] Total scans retained for downstream: {total_scans_remain}")
+    print(f"- [✓] Total high-confidence scans excluded: {total_hc_scans}")
     print(f"- [✓] Written scan filters to: {output_dir}")
     print(f"- [✓] Summary saved to: {summary_path}")
 
