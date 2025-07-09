@@ -23,7 +23,7 @@ def compress_scan_list(scan_list):
         i += 1
     return " ".join(result)
 
-def extract_and_save_scan_filters(msmsScan_path, output_dir, pep_thresh=0.01, score_thresh=0.7, chunksize=100000):
+def extract_and_save_scan_filters(msmsScan_path, output_dir, pep_thresh=0.01, score_thresh=40, chunksize=100000):
     """extract high-confidence scans and write to filter folder"""
 
     from collections import defaultdict
@@ -36,7 +36,7 @@ def extract_and_save_scan_filters(msmsScan_path, output_dir, pep_thresh=0.01, sc
     for chunk in pd.read_csv(msmsScan_path, sep='\t', usecols=use_cols, chunksize=chunksize):
         total_rows += len(chunk)
         mask = (
-            (chunk["PEP"] <= pep_thresh) &
+            (chunk["PEP"] < pep_thresh) &
             (chunk["Score"] >= score_thresh) &
             (chunk["Reverse"].astype(str).str.strip() != "+")
         )

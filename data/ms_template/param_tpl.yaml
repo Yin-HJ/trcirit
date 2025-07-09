@@ -33,7 +33,7 @@ Defaults:
   
   # scan filter paramters
   pep_thresh: 0.01
-  score_thresh: 0.7
+  score_thresh: 40
 
   # num of threads
   threads: 40

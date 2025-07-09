@@ -83,7 +83,7 @@ def add_validate_commands(cli):
                     msmsScan_path=msmsScan_path,
                     output_dir=scan_filter_dir,
                     pep_thresh=cfg.get("pep_thresh", 0.01),
-                    score_thresh=cfg.get("score_thresh", 0.7)
+                    score_thresh=cfg.get("score_thresh", 40)
                 )
                 logger.info("Extract high-confidence scan numbers successfully!")
 
