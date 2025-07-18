@@ -82,10 +82,18 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
     # build raw file path to write to mqpal.xml
     raw_path_prefix = cfg.get("rawFilePath", "").rstrip("/")
 
-    if raw_subdir:
-        root.find(".//lfqMode").text = "1" # if circRNA xml, run LFQ.
-        raw_path_prefix = os.path.join(Path(output_path).resolve(), raw_subdir)
-        
+    # enable_lfq only effective when raw_subdir is set
+    lfq_elem = root.find(".//lfqMode")
+    enable_lfq = cfg.get("enable_lfq", False)
+    if isinstance(enable_lfq, str):
+        enable_lfq = enable_lfq.strip().lower() == "true"
+    elif not isinstance(enable_lfq, bool):
+        raise ValueError("enable_lfq must be a boolean or a string 'true'/'false'.")
+
+    lfq_enable_flag = enable_lfq and (raw_subdir is not None)
+    if lfq_elem is not None:
+        lfq_elem.text = "1" if lfq_enable_flag else "0"
+
     for i, row in df.iterrows():
         
         # In circular RNA reference, .raw converted to .mzXML

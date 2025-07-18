@@ -52,3 +52,6 @@ Recommended:
   mainSearchTol: 5
   minPeptideLength: 7
   minRatioCount: 2
+  
+  # enable lable-free quantification: true/false
+  enable_lfq: false
