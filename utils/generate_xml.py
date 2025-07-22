@@ -100,6 +100,7 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
         raw_name = row["RawFileName"]
 
         if raw_subdir:
+            raw_path_prefix = os.path.join(Path(output_path).resolve(), raw_subdir)
             raw_name = os.path.splitext(raw_name)[0] + "_filtered.mzXML"
 
         full_raw_path = os.path.join(raw_path_prefix, raw_name)
