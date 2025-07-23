@@ -84,12 +84,12 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     is_not_reverse = df["Reverse"].astype(str).str.strip() != "+"
     is_not_OIBS = df["Only identified by site"].astype(str).str.strip() != "+"
     is_qvalue_pass = df["Q-value"] < 0.01
-    # is_score_pass = df["Score"] > 70
     is_unique_pep = df["Unique peptides"] >= 1
+    # is_score_pass = df["Score"] > 70
 
     # filter rows
     # mask = is_not_contaminant & is_not_reverse & is_qvalue_pass & is_score_pass & is_unique_pep
-    mask = is_not_contaminant & is_not_reverse & is_qvalue_pass & is_unique_pep
+    mask = is_not_contaminant & is_not_reverse & is_not_OIBS & is_qvalue_pass & is_unique_pep 
     df_filtered = df[mask].copy()
 
     if df_filtered.empty:
@@ -102,12 +102,14 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
 
     ibaq_cols = [col for col in df_filtered.columns if col.startswith("iBAQ ") and col != "iBAQ"]
     df_ibaq = df_filtered[ibaq_cols].copy()
-
-    low_info_rows = df_ibaq[df_ibaq.notna().sum(axis=1) < 3]
+    df_ibaq_raw = df_ibaq.copy()
+    
+    notna_counts = df_ibaq.notna().sum(axis=1)
+    low_info_rows = df_ibaq[notna_counts < 3]
     if not low_info_rows.empty:
         logger.warning(f"{low_info_rows.shape[0]} proteins detected in <3 samples and will be excluded")
 
-    df_ibaq = df_ibaq[df_ibaq.notna().sum(axis=1) >= 3] # need to be detected in at least three samples
+    df_ibaq = df_ibaq[notna_counts >= 3] # need to be detected in at least three samples
 
     # !!!quantile normalization 
     # QN by columns 
@@ -134,16 +136,20 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     df_quant.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_processed.tsv"), sep="\t", index=False)
 
     # 2. iBAQ raw（only Protein IDs + raw iBAQ）
-    df_raw_ibaq = pd.concat([
-        df_filtered.loc[df_filled.index, ["Protein IDs"]],
-        df_ibaq.loc[df_filled.index]
-    ], axis=1)
+    df_raw_ibaq = df_filtered.loc[df_ibaq_raw.index, ["Protein IDs"]].copy()
+    df_raw_ibaq = pd.concat([df_raw_ibaq, df_ibaq_raw], axis=1)
     df_raw_ibaq.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_raw.tsv"), sep="\t", index=False)
 
     # 3. Summary（Protein + Gene + iBAQ + Peptides IDs + Peptide seqs + Missing Flag）
     meta_cols = ["Protein IDs", "Fasta headers", "Unique peptides","Score", "iBAQ", "Peptide IDs"]
-    df_meta = df_filtered.loc[df_filled.index, meta_cols].copy()
-    df_meta["Filled_Missing"] = is_filled.astype(bool).values
+    df_meta = df_filtered.loc[:, meta_cols].copy()
+
+    filled_mask = df_filtered["Protein IDs"].isin(df_filled_with_name["Protein IDs"])
+    df_meta["Filled_Missing"] = ~filled_mask
+    
+    # add flag to indicate proteins which detected in >3 samples and used for normalization 
+    df_meta["used_for_normalization"] = True
+    df_meta.loc[low_info_rows.index, "used_for_normalization"] = False
 
     summary_path = os.path.join(out_dir, f"{output_prefix}_summary.tsv")
     df_meta.to_csv(summary_path, sep="\t", index=False)
@@ -170,11 +176,14 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
         f.write(
             "# Output Description for analyze module\n"
             "1. *_iBAQ_quantification.tsv: Protein IDs + iBAQ matrix (quantile normalized across samples, log2-transformed, NA filled).\n"
-            "   iBAQ values are suitable for comparing **absolute abundance between different proteins**.\n"
+            "    - If the protein is detected in less than three samples, it will be filtered out in this file because it cannot be normalized.\n"
+            "    - iBAQ values are suitable for comparing **absolute abundance between different proteins**.\n"
             "2. *_raw.tsv: Protein IDs + raw iBAQ values (not normalized/log2).\n"
             "3. *_LFQ.tsv: Protein IDs + LFQ intensity columns (raw). LFQ values are suitable for comparing **relative abundance across samples for the same protein**.\n"
-            "4. *_summary.tsv: Protein summary including gene name, unique peptides, iBAQ, peptide IDs, peptide sequences (Peptide seqs), missing data flag and ORF. Column 'Peptide seqs' is mapped from 'Peptide IDs' using peptides.txt."
-            "Column 'Filled_Missing' = True if any iBAQ value was originally missing.\n"
+            "4. *_summary.tsv: Protein summary including gene name, unique peptides, iBAQ, peptide IDs, peptide sequences (Peptide seqs), ORF, used_for_normalization flag and missing_data flag."
+            "    - Column 'Peptide seqs' is mapped from 'Peptide IDs' using peptides.txt."
+            "    - Column 'Filled_Missing' = True if any iBAQ value was originally missing.\n"
+            "    - Column 'used_for normalization' = True if  detected in >3 samples and used for normalization.\n"
             "5. Fill strategy: missing values are filled with the minimum log2(iBAQ+1) value of each sample (column-wise).\n"
             "6. High-confidence protein criteria:\n"
                 "   - Potential contaminant != '+'\n"
@@ -218,7 +227,6 @@ def update_summary_with_peptide_seqs(summary_path, peptides_path, logger=None):
 
     # Step 3: Define mapping function
     missing_ids = set()
-
     def map_ids_to_seqs(id_string):
         if pd.isna(id_string):
             return ""
@@ -233,10 +241,10 @@ def update_summary_with_peptide_seqs(summary_path, peptides_path, logger=None):
                 else:
                     missing_ids.add(i)
             return ";".join(seqs)
-        except Exception as e:
+        except Exception:
             return ""
-    # Step 4: Apply conversion
 
+    # Step 4: Apply conversion
     df_summary["Peptide seqs"] = df_summary["Peptide IDs"].apply(map_ids_to_seqs)
 
     # Step 5: Drop Peptide IDs column, keep column order
@@ -317,6 +325,8 @@ def add_circ_seq_to_summary(summary_path, circ_ref_path, logger=None):
 
     # Step 4: apply map, add new columns
     df_summary["ORF"] = df_summary["Fasta headers"].apply(map_headers_to_seqs)
+    cols = [c for c in df_summary.columns if c not in ["used_for_normalization", "Filled_Missing"]]
+    df_summary = df_summary[cols + ["used_for_normalization", "Filled_Missing"]]
 
     # Step 5: write file
     try:
