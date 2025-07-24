@@ -144,8 +144,9 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     meta_cols = ["Protein IDs", "Fasta headers", "Unique peptides","Score", "iBAQ", "Peptide IDs"]
     df_meta = df_filtered.loc[:, meta_cols].copy()
 
-    filled_mask = df_filtered["Protein IDs"].isin(df_filled_with_name["Protein IDs"])
-    df_meta["Filled_Missing"] = ~filled_mask
+    df_meta["Filled_Missing"] = False
+    filled_ids = df_filled_with_name.loc[is_filled, "Protein IDs"]
+    df_meta.loc[df_meta["Protein IDs"].isin(filled_ids), "Filled_Missing"] = True
     
     # add flag to indicate proteins which detected in >3 samples and used for normalization 
     df_meta["used_for_normalization"] = True
