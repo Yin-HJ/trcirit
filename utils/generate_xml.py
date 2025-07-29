@@ -31,6 +31,16 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
     root.find(".//fastaFilePath").text = cfg.get(fasta_key, "")
 
     # Optional(Recommended) search parameters from config
+    # solve minPeptideLength
+    min_pep_len_tag = root.find(".//minPeptideLength")
+    min_pep_key = "minPeptideLength_circ" if raw_subdir else "minPeptideLength_linear"
+    min_pep_value = cfg.get(min_pep_key)
+    if min_pep_value is not None:
+        if min_pep_len_tag is not None:
+            min_pep_len_tag.text = str(int(min_pep_value))
+        else:
+            print(f"[WARN] Tag <minPeptideLength> not found in template. Skipped.")
+
     optional_tags = {
         "enzymes": list,
         "fixedModifications": list,
@@ -38,7 +48,6 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
         "maxMissedCleavages": int,
         "firstSearchTol": float,
         "mainSearchTol": float,
-        "minPeptideLength": int,
         "minRatioCount": int
     }
 
