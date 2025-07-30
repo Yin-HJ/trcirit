@@ -42,12 +42,19 @@ Defaults:
 
 # === MaxQuant search settings ===
 Recommended:
-  enzymes:
-    - Trypsin/P
+  enzymes: 
+    - Trypsin
   fixedModifications: 
     - Carbamidomethyl (C)
+  variableModifications:
+    - Oxidation (M)
+    - Acetyl (Protein N-term)
   maxMissedCleavages: 2
   firstSearchTol: 20
-  mainSearchTol: 4.5
-  minPeptideLength: 7
+  mainSearchTol: 5
+  minPeptideLength_linear: 7
+  minPeptideLength_circ: 5
   minRatioCount: 2
+  
+  # enable lable-free quantification: true/false
+  enable_lfq: false
