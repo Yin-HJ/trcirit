@@ -1,6 +1,5 @@
 data/genome/
 data/circ_seq/
-data/circ_seq_CP
 tests/
 pkgs/MaxQuant_v2.6.7.0
 pkgs/trfp
