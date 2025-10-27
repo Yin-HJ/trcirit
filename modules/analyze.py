@@ -35,8 +35,10 @@ def add_analyze_commands(cli):
             # === Step 1: analyze proteinGroup.txt ===
             click.echo("Start analyzing...")
             input_path = Path(input).expanduser().resolve()
-            protein_group_path = input_path.joinpath("linear_free", "combined", "txt", "proteinGroups.txt")
-            check_path(protein_group_path, logger) 
+            default_path = input_path.joinpath("linear_free", "combined", "txt", "proteinGroups.txt")
+            fallback_path = input_path.joinpath("proteinGroups.txt")
+            protein_group_path = default_path if default_path.exists() else fallback_path
+            check_path(protein_group_path, logger)
 
             protein_num, summary_path = analyze_protein(protein_group_path, out_dir, output_prefix="Protein", logger=logger)
             
