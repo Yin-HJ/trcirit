@@ -102,7 +102,7 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     click.echo("===Step1 : iBAQ quantification===")
     click.echo("- iBAQ Normalization and log-transformation")
 
-    ibaq_cols = [col for col in df_filtered.columns if col.startswith("iBAQ ") and col != "iBAQ"]
+    ibaq_cols = [col for col in df_filtered.columns if col.startswith("iBAQ ") and col not in ["iBAQ", "iBAQ peptides"]]
     df_ibaq = df_filtered[ibaq_cols].copy()
     df_ibaq_raw = df_ibaq.copy()
     
@@ -178,7 +178,7 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     with open(os.path.join(out_dir, "README.txt"), "w") as f:
         f.write(
             "# Output Description for analyze module\n"
-            "1. *_iBAQ_quantification.tsv: Protein IDs + iBAQ matrix (quantile normalized across samples, log2-transformed, NA filled).\n"
+            "1. *_iBAQ_processed.tsv: Protein IDs + iBAQ matrix (quantile normalized across samples, log2-transformed, NA filled).\n"
             "    - If the protein is detected in less than three samples, it will be filtered out in this file because it cannot be normalized.\n"
             "    - iBAQ values are suitable for comparing **absolute abundance between different proteins**.\n"
             "2. *_raw.tsv: Protein IDs + raw iBAQ values (not normalized/log2).\n"
