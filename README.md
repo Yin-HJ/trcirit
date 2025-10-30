@@ -218,9 +218,13 @@ Recommended:
     - Acetyl (Protein N-term)
   maxMissedCleavages: 2
   firstSearchTol: 20
-  mainSearchTol: 4.5
-  minPeptideLength: 7
+  mainSearchTol: 5
+  minPeptideLength_linear: 7
+  minPeptideLength_circ: 5
   minRatioCount: 2
+
+ # enable lable-free quantification: true/false
+  enable_lfq: false
 ```
 
 #### validate translation by two-round MaxQuant search
@@ -267,4 +271,5 @@ trcirit analyze -i valid_out -o anlyz_out
 ```
 
 - The analysis is mainly based on proteinGroups.txt and peptide.txt from valid_out/linear_free/combined/txt/
+
 
