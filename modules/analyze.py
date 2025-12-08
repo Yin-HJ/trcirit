@@ -77,82 +77,120 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     # === Step 0: ensure output directory exists ===
     os.makedirs(out_dir, exist_ok=True)
     df = pd.read_csv(protein_group_path, sep='\t', low_memory=False)
+    click.echo(f"Processing file: {protein_group_path}")
 
     # === Step 1: filter invalid rows ===
     click.echo("\n- Filtering low-confidence proteins\n")
 
     # == filter criteria ==
+    # Maxquant controls "protein FDR" in the configuration file, where there is theoretically no need to filter Q value
+    # "Score" column was printed in summary files, do filtering by users
     is_not_contaminant = df["Potential contaminant"].astype(str).str.strip() != "+"
     is_not_reverse = df["Reverse"].astype(str).str.strip() != "+"
     is_not_OIBS = df["Only identified by site"].astype(str).str.strip() != "+"
-    is_qvalue_pass = df["Q-value"] < 0.01
     is_unique_pep = df["Unique peptides"] >= 1
     # is_score_pass = df["Score"] > 70
+    # is_qvalue_pass = df["Q-value"] < 0.01
 
     # filter rows
-    # mask = is_not_contaminant & is_not_reverse & is_qvalue_pass & is_score_pass & is_unique_pep
-    mask = is_not_contaminant & is_not_reverse & is_not_OIBS & is_qvalue_pass & is_unique_pep 
+    # mask = is_not_contaminant & is_not_reverse & is_not_OIBS & is_qvalue_pass & is_unique_pep
+    mask = is_not_contaminant & is_not_reverse & is_not_OIBS & is_unique_pep
     df_filtered = df[mask].copy()
 
     if df_filtered.empty:
         click.echo("[Warning] Analyze stop! After filtering, no high-confidence proteins were identified from proteinGroup.txt.")
         sys.exit(1)
 
-    # === Step2: iBAQ data normalization and transformation ===
-    click.echo("===Step1 : iBAQ quantification===")
+    # === Step2: iBAQ data normalization, transformation and write ===
+    click.echo("===Part1 : iBAQ quantification===")
     click.echo("- iBAQ Normalization and log-transformation")
 
     ibaq_cols = [col for col in df_filtered.columns if col.startswith("iBAQ ") and col not in ["iBAQ", "iBAQ peptides"]]
     df_ibaq = df_filtered[ibaq_cols].copy()
     df_ibaq_raw = df_ibaq.copy()
-    
-    notna_counts = df_ibaq.notna().sum(axis=1)
-    low_info_rows = df_ibaq[notna_counts < 3]
-    if not low_info_rows.empty:
-        logger.warning(f"{low_info_rows.shape[0]} proteins detected in <3 samples and will be excluded")
 
-    df_ibaq = df_ibaq[notna_counts >= 3] # need to be detected in at least three samples
+    # pre-check for normalization
+    can_normalize = True
+    reason = ""
+
+    if df_ibaq.shape[1] < 2:
+        can_normalize = False
+        reason = "iBAQ samples < 2, quantile normalization skipped."
+
+    elif df_ibaq.shape[0] == 0:
+        can_normalize = False
+        reason = "No proteins available for iBAQ normalization."
+
+    # count NA across rows for later summary
+    notna_counts = df_ibaq.notna().sum(axis=1)
+    # if not low_info_rows.empty:
+    #     logger.warning(f"{low_info_rows.shape[0]} proteins detected in <2 samples and will be excluded")
+    # df_ibaq = df_ibaq[notna_counts >= 3] # need to be detected in at least three samples
 
     # !!!quantile normalization 
     # QN by columns 
-    df_qn = pd.DataFrame(
-        quantile_transform(df_ibaq.values, axis=0, copy=True),
-        index=df_ibaq.index,
-        columns=df_ibaq.columns
-    )
 
-    # log2 transform
-    df_log2 = np.log2(df_qn + 1)
+    if df_ibaq.isna().any().any():
+        click.echo("[Warning] iBAQ matrix contains NaN values. Filling NaN using column minimum (excluding NA).")
 
-    # fill NA with min per sample
-    is_filled = df_log2.isna().any(axis=1)
-    min_vals = np.nanmin(df_log2.values, axis=0)
-    df_filled = df_log2.fillna(pd.Series(min_vals, index=df_log2.columns))
+        # fill NaN with column-wise minimum (ignoring NA)
+        df_ibaq = df_ibaq.apply(
+            lambda col: col.fillna(col[col.notna()].min())
+        )
+        # extremely rare case: a column is completely NA → enforce fill 0
+        df_ibaq = df_ibaq.fillna(0)
+
+    n_samples = df_ibaq.shape[1]
+
+    if can_normalize:
+        transformer = QuantileTransformer(
+            n_quantiles=min(1000, n_samples),
+            output_distribution='uniform',
+            copy=True
+        )
+
+        df_qn = pd.DataFrame(
+            transformer.fit_transform(df_ibaq.values),
+            index=df_ibaq.index,
+            columns=df_ibaq.columns
+        )
+
+        df_log2 = np.log2(df_qn + 1)
+        df_filled = df_log2
+        # min_vals = np.nanmin(df_log2.values, axis=0)
+        # df_filled = df_log2.fillna(pd.Series(min_vals, index=df_log2.columns))
+
+        # === Step4: write processed files ===
+        click.echo("- Prepare iBAQ data and write(normalized)")
+
+        df_filled_with_name = df_filtered.loc[df_filled.index, ["Protein IDs"]].copy()
+        df_quant = pd.concat([df_filled_with_name, df_filled], axis=1)
+
+        df_quant.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_processed.tsv"),
+                        sep="\t", index=False)
+    else:
+        click.secho(f"[Skip] {reason}", fg="yellow")
+        df_filled = None  # meaningful for summary
 
     # === Step3: write output files ===
-    click.echo("- Prepare iBAQ data and write results")
+    click.echo("- Prepare raw/summary data and write")
 
-    # 1. IBAQ quantification（normalized, log2, NA filled）
-    df_filled_with_name = df_filtered.loc[df_filled.index, ["Protein IDs"]].copy()
-    df_quant = pd.concat([df_filled_with_name, df_filled], axis=1)
-    df_quant.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_processed.tsv"), sep="\t", index=False)
-
-    # 2. iBAQ raw（only Protein IDs + raw iBAQ）
-    df_raw_ibaq = df_filtered.loc[df_ibaq_raw.index, ["Protein IDs"]].copy()
-    df_raw_ibaq = pd.concat([df_raw_ibaq, df_ibaq_raw], axis=1)
-    df_raw_ibaq.to_csv(os.path.join(out_dir, f"{output_prefix}_iBAQ_raw.tsv"), sep="\t", index=False)
+    # raw (Protien ID + iBAQ for each sample) 
+    protein_raw = pd.concat([df_filtered[["Protein IDs"]], df_ibaq_raw], axis=1)
+    protein_raw_path = os.path.join(out_dir, f"{output_prefix}_raw.tsv")
+    protein_raw.to_csv(protein_raw_path, sep="\t", index=False)
 
     # 3. Summary（Protein + Gene + iBAQ + Peptides IDs + Peptide seqs + Missing Flag）
     meta_cols = ["Protein IDs", "Fasta headers", "Unique peptides","Score", "iBAQ", "Peptide IDs"]
     df_meta = df_filtered.loc[:, meta_cols].copy()
 
+    # Filled_Missing flag: True if original iBAQ had NA and imputed by min value in the sample
     df_meta["Filled_Missing"] = False
-    filled_ids = df_filled_with_name.loc[is_filled, "Protein IDs"]
-    df_meta.loc[df_meta["Protein IDs"].isin(filled_ids), "Filled_Missing"] = True
+    missing_ids = df_ibaq_raw.index[df_ibaq_raw.isna().any(axis=1)]
+    df_meta.loc[missing_ids, "Filled_Missing"] = True
     
-    # add flag to indicate proteins which detected in >3 samples and used for normalization 
-    df_meta["used_for_normalization"] = True
-    df_meta.loc[low_info_rows.index, "used_for_normalization"] = False
+    # add flag to indicate proteins which detected in >2 samples and used for normalization 
+    df_meta["used_for_normalization"] = notna_counts >= 2
 
     summary_path = os.path.join(out_dir, f"{output_prefix}_summary.tsv")
     df_meta.to_csv(summary_path, sep="\t", index=False)
@@ -161,7 +199,7 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
     update_summary_with_peptide_seqs(summary_path, peptide_path, logger=logger)
 
     # 4. LFQ quantification results (LFQ intensity alreay normalized)
-    click.echo("\n===Step2 : LFQ quantification===")
+    click.echo("\n===Part2 : LFQ quantification===")
     click.echo("- Extract LFQ results and write results")
 
     lfq_cols = [col for col in df_filtered.columns if col.startswith("LFQ intensity ")]
@@ -179,15 +217,15 @@ def analyze_protein(protein_group_path, out_dir, output_prefix="protein", logger
         f.write(
             "# Output Description for analyze module\n"
             "1. *_iBAQ_processed.tsv: Protein IDs + iBAQ matrix (quantile normalized across samples, log2-transformed, NA filled).\n"
-            "    - If the protein is detected in less than three samples, it will be filtered out in this file because it cannot be normalized.\n"
+            "    - If the protein is detected in less than 2 samples(detected means 'not NA, but could be 0'), it will be filtered out in this file because it cannot be normalized.\n"
             "    - iBAQ values are suitable for comparing **absolute abundance between different proteins**.\n"
             "2. *_raw.tsv: Protein IDs + raw iBAQ values (not normalized/log2).\n"
             "3. *_LFQ.tsv: Protein IDs + LFQ intensity columns (raw). LFQ values are suitable for comparing **relative abundance across samples for the same protein**.\n"
             "4. *_summary.tsv: Protein summary including gene name, unique peptides, iBAQ, peptide IDs, peptide sequences (Peptide seqs), ORF, used_for_normalization flag and missing_data flag.\n"
             "    - Column 'Peptide seqs' is mapped from 'Peptide IDs' using peptides.txt.\n"
-            "    - Column 'used_for_normalization' = True if detected in >3 samples and used for normalization.\n"
-            "    - Column 'Filled_Missing' = True if any iBAQ value was originally missing.\n"
-            "5. Fill strategy: missing values are filled with the minimum log2(iBAQ+1) value of each sample (column-wise).\n"
+            "    - Column 'used_for_normalization' = True if detected in ≥ 2 samples(detected means 'not NA, but could be 0') and used for normalization.\n"
+            "    - Column 'Filled_Missing' = True if any iBAQ value was originally missing (NA).\n"
+            "5. Fill strategy: missing values are filled with the minimum value of each sample (column-wise) before normalization.\n"
             "6. High-confidence protein criteria:\n"
                 "   - Potential contaminant != '+'\n"
                 "   - Reverse != '+' \n"
