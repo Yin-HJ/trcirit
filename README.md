@@ -162,6 +162,7 @@ file4.raw    Control2
 file5.raw    Disease3    1(if exists)
 file6.raw    Disease3    2(if exists)
 ```
+- This file needs to be strictly tab-delimited
 
 Configuration file
 
@@ -272,6 +273,7 @@ trcirit analyze -i valid_out -o anlyz_out
 ```
 
 - The analysis is mainly based on proteinGroups.txt and peptide.txt from valid_out/linear_free/combined/txt/
+
 
 
 
