@@ -5,14 +5,14 @@ Required:
   rawFilePath: ./tests/codetest/rawFilePath
   
   # linear and circular reference
-  fastaFilePath_linear: ./data/reference/uniprotkb_AND_reviewed_true_AND_model_o_2024_11_29.fasta
-  fastaFilePath_circ: ./data/reference/HCC_pep.fa
+  fastaFilePath_linear: ./Ref/uniprotkb_AND_reviewed_true_AND_model_o_2024_11_29.fasta
+  fastaFilePath_circ: ./Ref/circ_BT.fasta
   
   # MaxQuant mapar.xml template path
-  template: ./data/ms_template/mqpar_tpl.xml
+  template: ./data/ms_template/param_tpl.yaml
 
   # expriement design file
-  exp_design: ./tests/codetest/exp_design.txt
+  exp_design: ./exp_design.txt
 
 
 # === Optional parameters ===
@@ -23,8 +23,8 @@ Defaults:
   projectName: my_test
 
   # maxquant path 
-  mq_cmd: ./pkgs/MaxQuant_v2.6.7.0/bin/MaxQuantCmd.dll
-  
+  mq_cmd: ./pkgs/MaxQuant_v2.6.7.0/bin/MaxQuantGui.dll
+
   # msconvert path
   pwiz_path: ./pkgs/pwiz/msconvert
 
@@ -41,7 +41,7 @@ Defaults:
 # === MaxQuant search settings ===
 Recommended:
   enzymes: 
-    - Trypsin/P
+    - Trypsin
   fixedModifications: 
     - Carbamidomethyl (C)
   variableModifications:
@@ -50,7 +50,8 @@ Recommended:
   maxMissedCleavages: 2
   firstSearchTol: 20
   mainSearchTol: 5
-  minPeptideLength: 7
+  minPeptideLength_linear: 7
+  minPeptideLength_circ: 5
   minRatioCount: 2
   
   # enable lable-free quantification: true/false
