@@ -1,6 +1,6 @@
 data/genome/
 data/circ_seq/
 tests/
-pkgs/MaxQuant_v2.6.7.0
-pkgs/MaxQuant_v2.7.5.0
-pkgs/trfp
+pkgs/MaxQuant_v2.6.7.0/
+pkgs/MaxQuant_v2.7.5.0/
+pkgs/trfp/
