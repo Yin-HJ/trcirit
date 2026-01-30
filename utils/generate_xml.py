@@ -22,7 +22,8 @@ def generate_mqpar(cfg, output_path, fasta_key="fastaFilePath", raw_subdir=None,
     # read template and experimental design
     tree = ET.parse(template_path)
     root = tree.getroot()
-    df = pd.read_csv(exp_design_path, sep='\t')
+    # df = pd.read_csv(exp_design_path, sep='\t')
+    df = pd.read_csv(exp_design_path, sep=r'[ ,\t]+')
 
     # update parameters
     project_name = cfg.get("projectName", "default_name") + suffix
