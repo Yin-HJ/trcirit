@@ -162,7 +162,7 @@ file4.raw    Control2
 file5.raw    Disease3    1(if exists)
 file6.raw    Disease3    2(if exists)
 ```
-- This file needs to be strictly tab-delimited
+- This file needs to be tab, comma, or space-delimited
 
 Configuration file
 
