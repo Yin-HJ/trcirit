@@ -1,4 +1,4 @@
-# trCIRIT
+# trCIRIT2
 
 **A bioinformatics tool for circRNA translation identification and validation, especially for ***backward translation***.**
 
