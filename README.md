@@ -152,7 +152,7 @@ Options:
 experiment design
 
 ```
-# trcirit/data/ms_template/exp_design_tpl.txt
+# file path: trcirit/data/ms_template/exp_design_tpl.txt
 
 RawFileName    Experiments    Fractions
 file1.raw    Disease1    
@@ -167,7 +167,7 @@ file6.raw    Disease3    2(if exists)
 Configuration file
 
 ```
-# trcirit/data/ms_template/config.yaml 
+# file path: trcirit/data/ms_template/config.yaml 
 
 # === Required parameters ===
 Required:
